@@ -15,8 +15,11 @@ with the standard Java libraries.
 
 ## Features
 - [x] Support for WAV, AU, AIFF, OGG and MP3 audio files
+- [x] System depending support for AIFC and SND files
+- [x] Reading audio file headers (doesn't work for OGG files yet)
 - [x] A unified way of playing audio either buffered or streamed
 - [x] The `Recorder` class which makes recording audio as easy as making coffee
+- [x] Playing audio as a collection with the `Playlist` class
 
 ## Requirements
 - Java 8 or higher
