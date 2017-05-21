@@ -1,8 +1,7 @@
 package de.ralleytn.simple.audio;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.OutputStream;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -13,7 +12,7 @@ import javax.sound.sampled.TargetDataLine;
 /**
  * Records audio from an input device.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
 public class Recorder {
@@ -21,9 +20,9 @@ public class Recorder {
 	private AudioFormat audioFormat;
 	private FileFormat fileFormat;
 	private TargetDataLine line;
-	private AudioInputStream audioInputStream;
+	private AudioInputStream input;
 	private boolean running;
-	private List<RecordingListener> recordingListeners;
+	private long recordingStartTime;
 	
 	/**
 	 * Initializes the {@linkplain Recorder} with {@link FileFormat#WAV} and an audio format with
@@ -57,7 +56,6 @@ public class Recorder {
 					this.line = (TargetDataLine)AudioSystem.getLine(info);
 					this.fileFormat = fileFormat;
 					this.audioFormat = audioFormat;
-					this.recordingListeners = new ArrayList<>();
 					
 				} catch(Exception exception) {
 					
@@ -70,33 +68,14 @@ public class Recorder {
 			throw new AudioException("The given file format does not support writing!");
 		}
 	}
-	
+
 	/**
-	 * Adds a {@linkplain RecordingListener}.
-	 * @param listener the listener to add
-	 * @since 1.0.0
-	 */
-	public void addRecordingListener(RecordingListener listener) {
-		
-		this.recordingListeners.add(listener);
-	}
-	
-	/**
-	 * Removes the given {@linkplain RecordingListener}.
-	 * @param listener the listener to remove
-	 * @since 1.0.0
-	 */
-	public void removeRecordingListener(RecordingListener listener) {
-		
-		this.recordingListeners.remove(listener);
-	}
-	
-	/**
-	 * Starts the recording.
+	 * Starts the recording and writes the data on the given output stream.
+	 * @param output the output stream to write the data on
 	 * @throws AudioException if the line cannot be opened due to resource restrictions
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 */
-	public void start() throws AudioException {
+	public void start(OutputStream output) throws AudioException {
 		
 		if(!this.running) {
 			
@@ -104,19 +83,21 @@ public class Recorder {
 				
 				this.line.open();
 				this.line.start();
+				this.recordingStartTime = System.currentTimeMillis();
 				this.running = true;
 				
 				new Thread(() -> {
 					
-					Recorder.this.audioInputStream = new AudioInputStream(Recorder.this.line);
-					byte[] data = new byte[Recorder.this.line.getBufferSize()];
-					
-					while(Recorder.this.line.isOpen()) {
+					try {
 						
-						int readBytes = Recorder.this.line.read(data, 0, data.length);
-						Recorder.this.recordingListeners.forEach(element -> element.recorded(data, readBytes));
-					}
+						Recorder.this.input = new AudioInputStream(Recorder.this.line);
+						AudioSystem.write(Recorder.this.input, Recorder.this.fileFormat.getType(), output);
 					
+					} catch(IOException exception) {
+						
+						exception.printStackTrace();
+					}
+
 				}).start();
 				
 			} catch(Exception exception) {
@@ -133,28 +114,18 @@ public class Recorder {
 	public void stop() {
 		
 		this.line.flush();
+		this.running = false;
 		this.line.stop();
 		this.line.close();
-		this.running = false;
-	}
-	
-	/**
-	 * Gives all used resources free.
-	 * @since 1.0.0
-	 */
-	public void dispose() {
 		
-		this.stop();
-		this.line = null;
-		this.audioFormat = null;
-		this.fileFormat = null;
-		
-		try {
+		if(this.input != null) {
 			
-			this.audioInputStream.close();
-			this.audioInputStream = null;
-			
-		} catch(IOException exception) {}
+			try {
+				
+				this.input.close();
+				
+			} catch(IOException exception) {}
+		}
 	}
 	
 	/**
@@ -185,11 +156,11 @@ public class Recorder {
 	}
 	
 	/**
-	 * @return the list with all the {@linkplain RecordingListener}s
-	 * @since 1.0.0
+	 * @return the time passes since the recording started in milliseconds or {@code 0} if the recorder isn't recording
+	 * @since 1.1.0
 	 */
-	public List<RecordingListener> getRecordingListeners() {
+	public long getRecordingTime() {
 		
-		return this.recordingListeners;
+		return this.running ? System.currentTimeMillis() - this.recordingStartTime : 0;
 	}
 }

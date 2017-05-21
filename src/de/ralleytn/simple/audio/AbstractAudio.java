@@ -4,29 +4,31 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.Control;
+import javax.sound.sampled.EnumControl;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.Line;
 
-import de.john.jarnbjo.JOgg;
+import org.tritonus.share.sampled.file.TAudioFileFormat;
 
 /**
  * Implements the {@linkplain Audio} and should be extended by all classes representing a form of playable audio.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
 public abstract class AbstractAudio implements Audio {
@@ -35,107 +37,187 @@ public abstract class AbstractAudio implements Audio {
 	protected FileFormat fileFormat;
 	protected AudioInputStream audioInputStream;
 	protected HashMap<String, Control> controls;
+	protected boolean open;
+	protected List<AudioListener> listeners = new ArrayList<>();
 	
 	/**
 	 * @param file name of the resource file
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(String file) throws MalformedURLException {
+	public AbstractAudio(String file) throws AudioException {
 		
-		this.resource = new File(file).toURI().toURL();
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+		try {
+			
+			this.resource = new File(file).toURI().toURL();
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
+		}
 	}
 	
 	/**
 	 * @param file the resource as {@linkplain File}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(File file) throws MalformedURLException {
+	public AbstractAudio(File file) throws AudioException {
 		
-		this.resource = file.toURI().toURL();
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+		try {
+			
+			this.resource = file.toURI().toURL();
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
+		}
 	}
 	
 	/**
 	 * @param file the resource as {@linkplain Path}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(Path file) throws MalformedURLException {
+	public AbstractAudio(Path file) throws AudioException {
 		
-		this.resource = file.toUri().toURL();
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+		try {
+			
+			this.resource = file.toUri().toURL();
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
+		}
 	}
 	
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(String zip, String entry) throws IOException {
+	public AbstractAudio(String zip, String entry) throws AudioException {
 		
 		try(ZipFile zipFile = new ZipFile(zip)) {
 			
 			this.resource = AbstractAudio.extractZipEntry(zipFile, entry);
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
 		}
-		
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
 	}
 	
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(File zip, String entry) throws IOException {
+	public AbstractAudio(File zip, String entry) throws AudioException {
 		
 		try(ZipFile zipFile = new ZipFile(zip)) {
 			
 			this.resource = AbstractAudio.extractZipEntry(zipFile, entry);
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
 		}
-		
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
 	}
 	
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(Path zip, String entry) throws IOException {
+	public AbstractAudio(Path zip, String entry) throws AudioException {
 		
 		try(ZipFile zipFile = new ZipFile(zip.toFile())) {
 			
 			this.resource = AbstractAudio.extractZipEntry(zipFile, entry);
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
 		}
-		
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
 	}
 	
 	/**
 	 * @param url the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(URL url) {
+	public AbstractAudio(URL url) throws AudioException {
 		
 		this.resource = url;
 		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+		
+		if(this.fileFormat == null) {
+			
+			throw new AudioException("Unsupported file format!");
+		}
 	}
 	
 	/**
 	 * @param uri the resource as {@linkplain URI}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public AbstractAudio(URI uri) throws MalformedURLException {
+	public AbstractAudio(URI uri) throws AudioException {
 		
-		this.resource = uri.toURL();
-		this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+		try {
+			
+			this.resource = uri.toURL();
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
+		}
 	}
 	
 	@Override
@@ -200,42 +282,122 @@ public abstract class AbstractAudio implements Audio {
 		return this.resource;
 	}
 	
-	protected static final HashMap<String, Control> extractControls(Line line) {
+	@Override
+	public boolean isOpen() {
+		
+		return this.open;
+	}
+	
+	@Override
+	public void addAudioListener(AudioListener listener) {
+		
+		this.listeners.add(listener);
+	}
+	
+	@Override
+	public void removeAudioListener(AudioListener listener) {
+		
+		List<AudioListener> newList = new ArrayList<>();
+		this.listeners.forEach(element -> {
+			
+			if(element != listener) {
+				
+				newList.add(element);
+			}
+		});
+		
+		this.listeners = newList;
+	}
+	
+	@Override
+	public List<AudioListener> getAudioListeners() {
+		
+		return this.listeners;
+	}
+	
+	@Override
+	public Map<?, ?> getHeaders() {
+		
+		Map<?, ?> headers = null;
+		
+		switch(this.fileFormat) {
+			case AIFC:
+			case AIFF:
+			case AU:
+			case SND:
+			case WAV:
+				try {
+				
+					headers = AudioSystem.getAudioFileFormat(this.resource).properties();
+					
+				} catch(Exception exception) {
+					
+					exception.printStackTrace();
+				}
+			
+				break;
+				
+			case MP3:
+				try {
+					
+					AudioFileFormat audioFileFormat = AudioSystem.getAudioFileFormat(this.resource);
+					
+					if(audioFileFormat instanceof TAudioFileFormat) {
+						
+						headers = ((TAudioFileFormat)audioFileFormat).properties();
+					}
+					
+				} catch(Exception exception) {
+					
+					exception.printStackTrace();
+				}
+				
+				break;
+				
+			case OGG:
+				// Still don't know how to read the OGG headers.
+				break;
+		}
+		
+		return headers;
+	}
+	
+	protected void trigger(AudioEvent.Type type) {
+		
+		AudioEvent event = new AudioEvent(this, type);
+		this.listeners.forEach(listener -> listener.update(event));
+	}
+	
+	protected static final HashMap<String, Control> extractControls(Line line, Map<String, Control> old) {
 		
 		HashMap<String, Control> controls = new HashMap<>();
 		
 		for(Control control : line.getControls()) {
 			
+			String key = control.getType().toString();
+			
+			if(old != null && old.containsKey(key)) {
+				
+				Control oldControl = old.get(key);
+				
+				if(control instanceof FloatControl && oldControl instanceof FloatControl) {
+					
+					((FloatControl)control).setValue(((FloatControl)oldControl).getValue());
+					
+				} else if(control instanceof BooleanControl && oldControl instanceof BooleanControl) {
+					
+					((BooleanControl)control).setValue(((BooleanControl)oldControl).getValue());
+					
+				} else if(control instanceof EnumControl && oldControl instanceof EnumControl) {
+					
+					((EnumControl)control).setValue(((EnumControl)oldControl).getValue());
+				}
+			}
+			
 			controls.put(control.getType().toString(), control);
 		}
 		
 		return controls;
-	}
-	
-	protected static final AudioInputStream getAudioInputStream(URL resource, FileFormat fileFormat) throws Exception {
-		
-		AudioInputStream audioInputStream = null;
-		
-		switch(fileFormat) {
-			case MP3:
-				audioInputStream = AudioSystem.getAudioInputStream(resource);
-				AudioFormat baseFormat = audioInputStream.getFormat();
-				AudioFormat decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16,baseFormat.getChannels(), baseFormat.getChannels() * 2, baseFormat.getSampleRate(), false);
-				audioInputStream = AudioSystem.getAudioInputStream(decodedFormat, audioInputStream);
-				break;
-	
-			case OGG:
-				audioInputStream = JOgg.getAudioInputStream(resource);
-				break;
-	
-			case AU:
-			case AIFF:
-			case WAV:
-				audioInputStream = AudioSystem.getAudioInputStream(resource);
-				break;
-		}
-		
-		return audioInputStream;
 	}
 	
 	private static final URL extractZipEntry(ZipFile zip, String entry) throws IOException {

@@ -2,7 +2,6 @@ package de.ralleytn.simple.audio;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -17,7 +16,7 @@ import javax.sound.sampled.SourceDataLine;
 /**
  * Never loads the entire audio data into the RAM. Good for music and long audio.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
 public class StreamedAudio extends AbstractAudio {
@@ -35,30 +34,30 @@ public class StreamedAudio extends AbstractAudio {
 	
 	/**
 	 * @param file name of the resource file
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(String file) throws MalformedURLException {
+	public StreamedAudio(String file) throws AudioException {
 		
 		super(file);
 	}
 	
 	/**
 	 * @param file the resource as {@linkplain File}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(File file) throws MalformedURLException {
+	public StreamedAudio(File file) throws AudioException {
 		
 		super(file);
 	}
 	
 	/**
 	 * @param file the resource as {@linkplain Path}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(Path file) throws MalformedURLException {
+	public StreamedAudio(Path file) throws AudioException {
 		
 		super(file);
 	}
@@ -66,10 +65,10 @@ public class StreamedAudio extends AbstractAudio {
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(String zip, String entry) throws IOException {
+	public StreamedAudio(String zip, String entry) throws AudioException {
 		
 		super(zip, entry);
 	}
@@ -77,10 +76,10 @@ public class StreamedAudio extends AbstractAudio {
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(File zip, String entry) throws IOException {
+	public StreamedAudio(File zip, String entry) throws AudioException {
 		
 		super(zip, entry);
 	}
@@ -88,29 +87,30 @@ public class StreamedAudio extends AbstractAudio {
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(Path zip, String entry) throws IOException {
+	public StreamedAudio(Path zip, String entry) throws AudioException {
 		
 		super(zip, entry);
 	}
 	
 	/**
 	 * @param url the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(URL url) {
+	public StreamedAudio(URL url) throws AudioException {
 		
 		super(url);
 	}
 	
 	/**
 	 * @param uri the resource as {@linkplain URI}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public StreamedAudio(URI uri) throws MalformedURLException {
+	public StreamedAudio(URI uri) throws AudioException {
 		
 		super(uri);
 	}
@@ -126,37 +126,52 @@ public class StreamedAudio extends AbstractAudio {
 		this.servicePlay = Executors.newSingleThreadExecutor();
 		this.servicePlay.execute(this.actionPlay);
 		this.playing = true;
+		this.trigger(AudioEvent.Type.STARTED);
 	}
 
 	@Override
 	public void pause() {
 		
-		this.paused = true;
-		this.playing = false;
-
-		if(this.looping) {
+		if(this.playing && !this.paused) {
 			
-			this.pausedWhileLooping = true;
+			this.paused = true;
+			this.playing = false;
+
+			if(this.looping) {
+				
+				this.pausedWhileLooping = true;
+			}
+			
+			this.trigger(AudioEvent.Type.PAUSED);
 		}
 	}
 
 	@Override
 	public void resume() {
 		
-		this.playing = true;
-		
-		if(this.pausedWhileLooping) {
+		if(this.paused) {
 			
-			this.pausedWhileLooping = false;
-			this.looping = true;
+			this.playing = true;
+			
+			if(this.pausedWhileLooping) {
+				
+				this.pausedWhileLooping = false;
+				this.looping = true;
+			}
+			
+	        this.paused = false;
+	        
+	        synchronized(this.object) {
+	        	
+	            this.object.notifyAll();  
+	        }
+	        
+	        this.trigger(AudioEvent.Type.RESUMED);
+	        
+		} else {
+			
+			this.play();
 		}
-		
-        this.paused = false;
-        
-        synchronized(this.object) {
-        	
-            this.object.notifyAll();  
-        }
 	}
 
 	@Override
@@ -177,6 +192,7 @@ public class StreamedAudio extends AbstractAudio {
 		}
 		
 		this.setPosition(0);
+		this.trigger(AudioEvent.Type.STOPPED);
 	}
 
 	@Override
@@ -242,7 +258,7 @@ public class StreamedAudio extends AbstractAudio {
 		
 		try {
 			
-			this.audioInputStream = AbstractAudio.getAudioInputStream(this.resource, this.fileFormat);
+			this.audioInputStream = Audio.getAudioInputStream(this.resource);
 			this.microsecondLength = (long)(1000000 * (this.audioInputStream.getFrameLength() / this.audioInputStream.getFormat().getFrameRate()));
 			this.frameLength = this.audioInputStream.getFrameLength();
 			
@@ -258,14 +274,16 @@ public class StreamedAudio extends AbstractAudio {
 
 				this.frameLength /= this.audioInputStream.getFormat().getFrameSize();
 				this.audioInputStream.close();
-				this.audioInputStream = AbstractAudio.getAudioInputStream(this.resource, this.fileFormat);
+				this.audioInputStream = Audio.getAudioInputStream(this.resource);
 				this.microsecondLength = (long)(1000000 * (frameLength / this.audioInputStream.getFormat().getFrameRate()));
 			}
 			
 			DataLine.Info info = new DataLine.Info(SourceDataLine.class, this.audioInputStream.getFormat());
 			this.line = (SourceDataLine)AudioSystem.getLine(info);
 			this.line.open(this.audioInputStream.getFormat());
-			this.controls = AbstractAudio.extractControls(this.line);
+			this.controls = AbstractAudio.extractControls(this.line, this.controls);
+			this.open = true;
+			this.trigger(AudioEvent.Type.OPENED);
 			
 		} catch(Exception exception) {
 			
@@ -277,9 +295,15 @@ public class StreamedAudio extends AbstractAudio {
 	public void close() {
 		
 		this.playing = false;
-		this.line.flush();
-		this.line.close();
-		this.line = null;
+		this.paused = false;
+		this.pausedWhileLooping = false;
+		
+		if(this.line != null) {
+			
+			this.line.flush();
+			this.line.close();
+			this.line = null;
+		}
 		
 		try {
 			
@@ -290,6 +314,9 @@ public class StreamedAudio extends AbstractAudio {
 			}
 			
 		} catch(IOException exception) {}
+		
+		this.open = false;
+		this.trigger(AudioEvent.Type.CLOSED);
 	}
 	
 	@Override
@@ -314,12 +341,6 @@ public class StreamedAudio extends AbstractAudio {
 	public boolean isPlaying() {
 		
 		return this.playing;
-	}
-
-	@Override
-	public boolean ends() {
-		
-		return this.line.getMicrosecondPosition() >= this.microsecondLength;
 	}
 
 	@Override
@@ -385,6 +406,7 @@ public class StreamedAudio extends AbstractAudio {
 							
 							if(!StreamedAudio.this.paused) {
 								
+								StreamedAudio.this.trigger(AudioEvent.Type.REACHED_END);
 								StreamedAudio.this.reset();
 								currentRepetition++;
 								break;
@@ -431,13 +453,14 @@ public class StreamedAudio extends AbstractAudio {
 					
 					try {
 
-						while((read = StreamedAudio.this.audioInputStream.read(buffer)) > -1 && StreamedAudio.this.playing && !StreamedAudio.this.paused) {
+						while(StreamedAudio.this.playing && !StreamedAudio.this.paused && (read = StreamedAudio.this.audioInputStream.read(buffer)) > -1) {
 							
 							StreamedAudio.this.line.write(buffer, 0, read);
 						}
 						
 						if(!StreamedAudio.this.paused) {
 							
+							StreamedAudio.this.trigger(AudioEvent.Type.REACHED_END);
 							StreamedAudio.this.reset();
 							StreamedAudio.this.servicePlay.shutdown();
 						}

@@ -1,22 +1,26 @@
 package de.ralleytn.simple.audio;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
 
+import de.john.jarnbjo.JOgg;
+
 /**
  * Interface containing all the methods a good audio implementation should have.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
-public interface Audio {
+public interface Audio extends Playable {
 
 	/**
 	 * @since 1.0.0
@@ -24,49 +28,11 @@ public interface Audio {
 	public static final int LOOP_ENDLESS = -1;
 	
 	/**
-	 * Plays the audio from the beginning.
-	 * @since 1.0.0
-	 */
-	public void play();
-	
-	/**
-	 * Pauses the audio.
-	 * @since 1.0.0
-	 */
-	public void pause();
-	
-	/**
-	 * Resumes the audio when paused.
-	 * @since 1.0.0
-	 */
-	public void resume();
-	
-	/**
-	 * Stops the audio.
-	 * @since 1.0.0
-	 */
-	public void stop();
-	
-	/**
 	 * Loops the audio for {@code n} times.
 	 * @param repetitions the number of repetitions
 	 * @since 1.0.0
 	 */
 	public void loop(int repetitions);
-	
-	/**
-	 * Sets the volume of the audio.
-	 * @param volume new volume
-	 * @since 1.0.0
-	 */
-	public void setVolume(float volume);
-	
-	/**
-	 * Sets wherever the audio should be muted or not.
-	 * @param mute {@code true} if it should be muted, else {@code false}
-	 * @since 1.0.0
-	 */
-	public void setMute(boolean mute);
 	
 	/**
 	 * Sets the position at which the audio should play.
@@ -109,24 +75,6 @@ public interface Audio {
 	public long getPosition();
 	
 	/**
-	 * @return {@code true} if the audio is muted, else {@code false}
-	 * @since 1.0.0
-	 */
-	public boolean isMuted();
-	
-	/**
-	 * @return {@code true} if the audio is currently playing, else {@code false}
-	 * @since 1.0.0
-	 */
-	public boolean isPlaying();
-	
-	/**
-	 * @return the current volume
-	 * @since 1.0.0
-	 */
-	public float getVolume();
-	
-	/**
 	 * @return the length of the audio in milliseconds
 	 * @since 1.0.0
 	 */
@@ -137,13 +85,6 @@ public interface Audio {
 	 * @since 1.0.0
 	 */
 	public float getBalance();
-	
-	/**
-	 * Should be invoked in a loop.
-	 * @return {@code true} if the audio reached its end, else {@code false}
-	 * @since 1.0.0
-	 */
-	public boolean ends();
 	
 	/**
 	 * @return the current level of volume.
@@ -194,6 +135,38 @@ public interface Audio {
 	public long getFramePosition();
 	
 	/**
+	 * @return {@code true} if the audio resource is currently open, else {@code false}
+	 * @since 1.1.0
+	 */
+	public boolean isOpen();
+	
+	/**
+	 * @return the audio file's headers
+	 * @since 1.1.0
+	 */
+	public Map<?, ?> getHeaders();
+	
+	/**
+	 * Adds an {@linkplain AudioListener} to the audio.
+	 * @param listener the listener to add
+	 * @since 1.1.0
+	 */
+	public void addAudioListener(AudioListener listener);
+	
+	/**
+	 * Removes an {@linkplain AudioListener} from the audio.
+	 * @param listener the listener to remove
+	 * @since 1.1.0
+	 */
+	public void removeAudioListener(AudioListener listener);
+	
+	/**
+	 * @return a list with all the {@linkplain AudioListener}s fo this audio
+	 * @since 1.1.0
+	 */
+	public List<AudioListener> getAudioListeners();
+	
+	/**
 	 * Loops the audio endlessly.
 	 * @since 1.0.0
 	 */
@@ -211,6 +184,51 @@ public interface Audio {
 	public static Mixer.Info[] getPorts() {
 
 		return AudioSystem.getMixerInfo();
+	}
+	
+	/**
+	 * @param resource the resource from which you want the {@linkplain AudioInputStream} from
+	 * @return the {@linkplain AudioInputStream} from the resource
+	 * @throws AudioException if something went wrong while retrieving the {@linkplain AudioInputStream}
+	 * @since 1.1.0
+	 */
+	public static AudioInputStream getAudioInputStream(URL resource) throws AudioException {
+		
+		AudioInputStream audioInputStream = null;
+		FileFormat fileFormat = FileFormat.getFormatByName(resource.toExternalForm());
+		
+		try {
+			
+			switch(fileFormat) {
+				case MP3:
+					audioInputStream = AudioSystem.getAudioInputStream(resource);
+					AudioFormat baseFormat = audioInputStream.getFormat();
+					AudioFormat decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16,baseFormat.getChannels(), baseFormat.getChannels() * 2, baseFormat.getSampleRate(), false);
+					audioInputStream = AudioSystem.getAudioInputStream(decodedFormat, audioInputStream);
+					break;
+	
+				case OGG:
+					audioInputStream = JOgg.getAudioInputStream(resource);
+					break;
+	
+				case AU:
+				case AIFC:
+				case SND:
+				case AIFF:
+				case WAV:
+					audioInputStream = AudioSystem.getAudioInputStream(resource);
+					break;
+					
+				default:
+					throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
+		}
+		
+		return audioInputStream;
 	}
 	
 	/**

@@ -2,7 +2,6 @@ package de.ralleytn.simple.audio;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -10,43 +9,45 @@ import java.nio.file.Path;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineEvent;
 
 /**
  * Reads the entire audio data into the RAM. Good for small sound effects.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
 public class BufferedAudio extends AbstractAudio {
 
 	private Clip clip;
+	private boolean paused;
 	
 	/**
 	 * @param file name of the resource file
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(String file) throws MalformedURLException {
+	public BufferedAudio(String file) throws AudioException {
 		
 		super(file);
 	}
 	
 	/**
 	 * @param file the resource as {@linkplain File}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(File file) throws MalformedURLException {
+	public BufferedAudio(File file) throws AudioException {
 		
 		super(file);
 	}
 	
 	/**
 	 * @param file the resource as {@linkplain Path}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(Path file) throws MalformedURLException {
+	public BufferedAudio(Path file) throws AudioException {
 		
 		super(file);
 	}
@@ -54,10 +55,10 @@ public class BufferedAudio extends AbstractAudio {
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(String zip, String entry) throws IOException {
+	public BufferedAudio(String zip, String entry) throws AudioException {
 		
 		super(zip, entry);
 	}
@@ -65,10 +66,10 @@ public class BufferedAudio extends AbstractAudio {
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(File zip, String entry) throws IOException {
+	public BufferedAudio(File zip, String entry) throws AudioException {
 		
 		super(zip, entry);
 	}
@@ -76,29 +77,30 @@ public class BufferedAudio extends AbstractAudio {
 	/**
 	 * @param zip zip file containing the resource
 	 * @param entry name of the resource entry
-	 * @throws IOException if somethiong went wrong while extracting the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(Path zip, String entry) throws IOException {
+	public BufferedAudio(Path zip, String entry) throws AudioException {
 		
 		super(zip, entry);
 	}
 	
 	/**
 	 * @param url the resource
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(URL url) {
+	public BufferedAudio(URL url) throws AudioException {
 		
 		super(url);
 	}
 	
 	/**
 	 * @param uri the resource as {@linkplain URI}
-	 * @throws MalformedURLException if a protocol handler for the URL could not be found, or if some other error occurred while constructing the URL
+	 * @throws AudioException if something is wrong with the resource
 	 * @since 1.0.0
 	 */
-	public BufferedAudio(URI uri) throws MalformedURLException {
+	public BufferedAudio(URI uri) throws AudioException {
 		
 		super(uri);
 	}
@@ -118,18 +120,34 @@ public class BufferedAudio extends AbstractAudio {
 		}
 		
 		this.clip.start();
+		this.paused = false;
+		this.trigger(AudioEvent.Type.STARTED);
 	}
 
 	@Override
 	public void pause() {
 		
-		this.clip.stop();
+		if(this.isPlaying()) {
+			
+			this.clip.stop();
+			this.paused = true;
+			this.trigger(AudioEvent.Type.PAUSED);
+		}
 	}
 
 	@Override
 	public void resume() {
 		
-		this.clip.start();
+		if(this.paused) {
+			
+			this.clip.start();
+			this.paused = false;
+			this.trigger(AudioEvent.Type.RESUMED);
+			
+		} else {
+			
+			this.play();
+		}
 	}
 
 	@Override
@@ -137,6 +155,8 @@ public class BufferedAudio extends AbstractAudio {
 		
 		this.clip.stop();
 		this.clip.setMicrosecondPosition(0);
+		this.paused = false;
+		this.trigger(AudioEvent.Type.STOPPED);
 	}
 
 	@Override
@@ -147,6 +167,7 @@ public class BufferedAudio extends AbstractAudio {
 			this.stop();
 		}
 		
+		this.paused = false;
 		this.clip.loop(repetitions);
 	}
 
@@ -161,10 +182,19 @@ public class BufferedAudio extends AbstractAudio {
 
 		try {
 			
-			this.audioInputStream = AbstractAudio.getAudioInputStream(this.resource, this.fileFormat);
+			this.audioInputStream = Audio.getAudioInputStream(this.resource);
 			this.clip = AudioSystem.getClip();
 			this.clip.open(this.audioInputStream);
-			this.controls = AbstractAudio.extractControls(this.clip);
+			this.clip.addLineListener(event -> {
+				
+				if(event.getType().equals(LineEvent.Type.STOP) && this.clip.getMicrosecondPosition() >= this.clip.getMicrosecondLength()) {
+					
+					this.trigger(AudioEvent.Type.REACHED_END);
+				}
+			});
+			this.controls = AbstractAudio.extractControls(this.clip, this.controls);
+			this.open = true;
+			this.trigger(AudioEvent.Type.OPENED);
 			
 		} catch(Exception exception) {
 			
@@ -175,7 +205,11 @@ public class BufferedAudio extends AbstractAudio {
 	@Override
 	public void close() {
 		
-		this.stop();
+		if(this.isPlaying()) {
+			
+			this.stop();
+		}
+		
 		this.clip.flush();
 		this.clip.close();
 		this.controls.clear();
@@ -185,6 +219,9 @@ public class BufferedAudio extends AbstractAudio {
 			this.audioInputStream.close();
 			
 		} catch(IOException exception) {}
+		
+		this.open = false;
+		this.trigger(AudioEvent.Type.CLOSED);
 	}
 	
 	@Override
@@ -212,14 +249,8 @@ public class BufferedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public boolean ends() {
-		
-		return this.clip.getMicrosecondPosition() >= this.clip.getMicrosecondLength();
-	}
-
-	@Override
 	public float getLevel() {
-		
+	
 		return this.clip.getLevel();
 	}
 	
