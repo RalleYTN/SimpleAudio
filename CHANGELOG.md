@@ -1,4 +1,7 @@
 # Changelog
+## Version 1.2.1
+- Found a more elegant solution for reading the OGG headers.
+
 ## Version 1.2.0
 - Added the ability to read headers of OGG files.
 - Added three new audio event types.
