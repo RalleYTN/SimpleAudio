@@ -1,4 +1,11 @@
 # Changelog
+## Version 1.2.0
+- Added the ability to read headers of OGG files.
+- Added three new audio event types.
+- Audio events now also have attributes for old and new value.
+- Added the method `Playable.isPaused()`. (could cause incompatibility with older versions)
+- Added a `PlaylistListener`.
+
 ## Version 1.1.0
 - Removed the `RecordingListener` interface. (causes incompatibility with older versions)
 - Removed the `dispose` method from `Recorder`. (causes incompatibility with older versions)

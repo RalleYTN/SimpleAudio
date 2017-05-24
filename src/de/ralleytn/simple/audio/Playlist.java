@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2017 Ralph Niemitz
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package de.ralleytn.simple.audio;
 
 import java.util.ArrayList;
@@ -7,12 +31,13 @@ import java.util.List;
  * Stores multiple {@linkplain Audio}s and plays them in a batch.
  * Handy if you want to program an audio player.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.1.0
+ * @version 1.2.0
  * @since 1.1.0
  */
 public class Playlist implements Playable {
 
-	private ArrayList<Audio> tracks = new ArrayList<Audio>();
+	private List<Audio> tracks = new ArrayList<>();
+	private List<PlaylistListener> listeners = new ArrayList<>();
 	private int currentTrack = -1;
 	private boolean shuffling;
 	private boolean looping;
@@ -23,6 +48,7 @@ public class Playlist implements Playable {
 
 		if(event.getType().equals(AudioEvent.Type.REACHED_END)) {
 			
+			this.trigger(PlaylistEvent.Type.TRACK_REACHED_END);
 			this.next();
 		}
 	};
@@ -35,6 +61,44 @@ public class Playlist implements Playable {
 	public void add(Audio audio) {
 		
 		this.tracks.add(audio);
+	}
+	
+	/**
+	 * Adds a {@linkplain PlaylistListener} to this {@linkplain Playlist}.
+	 * @param listener the {@linkplain PlaylistListener} to add
+	 * @since 1.2.0
+	 */
+	public void addPlaylistListener(PlaylistListener listener) {
+		
+		this.listeners.add(listener);
+	}
+	
+	/**
+	 * Remove the given {@linkplain PlaylistListener} from this {@linkplain Playlist}.
+	 * @param listener the {@linkplain PlaylistListener} to remove
+	 * @since 1.2.0
+	 */
+	public void removePlaylistListener(PlaylistListener listener) {
+		
+		List<PlaylistListener> newList = new ArrayList<>();
+		this.listeners.forEach(element -> {
+			
+			if(element != listener) {
+				
+				newList.add(element);
+			}
+		});
+		
+		this.listeners = newList;
+	}
+	
+	/**
+	 * @return the list of all the {@linkplain PlaylistListener}s
+	 * @since 1.2.0
+	 */
+	public List<PlaylistListener> getPlaylistListeners() {
+		
+		return this.listeners;
 	}
 	
 	/**
@@ -127,6 +191,7 @@ public class Playlist implements Playable {
 		}
 		
 		audio.play();
+		this.trigger(PlaylistEvent.Type.STARTED);
 		this.playing = true;
 	}
 
@@ -143,6 +208,7 @@ public class Playlist implements Playable {
 				audio.removeAudioListener(this.listener);
 				audio.close();
 				this.playing = false;
+				this.trigger(PlaylistEvent.Type.STOPPED);
 			}
 		}
 	}
@@ -158,6 +224,7 @@ public class Playlist implements Playable {
 				
 				audio.pause();
 				this.playing = false;
+				this.trigger(PlaylistEvent.Type.PAUSED);
 			}
 		}
 	}
@@ -173,6 +240,7 @@ public class Playlist implements Playable {
 				
 				audio.resume();
 				this.playing = true;
+				this.trigger(PlaylistEvent.Type.RESUMED);
 			}
 		}
 	}
@@ -188,7 +256,9 @@ public class Playlist implements Playable {
 			
 			if(audio != null && audio.isOpen()) {
 				
+				float oldVal = audio.getVolume();
 				audio.setVolume(volume);
+				this.trigger(PlaylistEvent.Type.VOLUME_CHANGED, oldVal, volume);
 			}
 		}
 	}
@@ -204,7 +274,9 @@ public class Playlist implements Playable {
 			
 			if(audio != null && audio.isOpen()) {
 				
+				boolean oldVal = audio.isMuted();
 				audio.setMute(mute);
+				this.trigger(PlaylistEvent.Type.MUTE_CHANGED, oldVal, volume);
 			}
 		}
 	}
@@ -252,12 +324,16 @@ public class Playlist implements Playable {
 	public void next() {
 		
 		this.stop();
+		Audio oldVal = this.tracks.get(this.currentTrack);
 		this.currentTrack = this.getNextTrackIndex();
+		Audio newVal = this.tracks.get(this.currentTrack);
 		
 		if(this.currentTrack != -1) {
 			
 			this.play();
 		}
+		
+		this.trigger(PlaylistEvent.Type.TRACK_CHANGED, oldVal, newVal);
 	}
 	
 	/**
@@ -267,12 +343,16 @@ public class Playlist implements Playable {
 	public void previous() {
 		
 		this.stop();
+		Audio oldVal = this.tracks.get(this.currentTrack);
 		this.currentTrack = this.getPreviousTrackIndex();
+		Audio newVal = this.tracks.get(this.currentTrack);
 		
 		if(this.currentTrack != -1) {
 			
 			this.play();
 		}
+		
+		this.trigger(PlaylistEvent.Type.TRACK_CHANGED, oldVal, newVal);
 	}
 	
 	private int getPreviousTrackIndex() {
@@ -379,5 +459,29 @@ public class Playlist implements Playable {
 	public List<Audio> getTracks() {
 		
 		return this.tracks;
+	}
+	
+	@Override
+	public boolean isPaused() {
+		
+		if(this.currentTrack != -1) {
+			
+			Audio audio = this.tracks.get(this.currentTrack);
+			return audio != null && audio.isOpen() && audio.isPaused();
+		}
+		
+		return false;
+	}
+	
+	protected void trigger(PlaylistEvent.Type type) {
+		
+		PlaylistEvent event = new PlaylistEvent(this, type);
+		this.listeners.forEach(listener -> listener.update(event));
+	}
+	
+	protected void trigger(PlaylistEvent.Type type, Object oldVal, Object newVal) {
+		
+		PlaylistEvent event = new PlaylistEvent(this, type, oldVal, newVal);
+		this.listeners.forEach(listener -> listener.update(event));
 	}
 }
