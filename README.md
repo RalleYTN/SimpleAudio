@@ -29,7 +29,7 @@ with the standard Java libraries.
 Just put the `.jar` files on your class path.
 
 # Links
-See the [guide](https://github.com/RalleYTN/SimpleAudio/wiki) on how to use the libary
+See the [guide](https://github.com/RalleYTN/SimpleAudio/wiki) on how to use the libary  
 See the [roadmap](https://trello.com/b/a3o9JKrC)  
 See the [online documentation](https://ralleytn.github.io/SimpleAudio/)  
 See the [changelog](https://github.com/RalleYTN/SimpleAudio/blob/master/CHANGELOG.md)  
