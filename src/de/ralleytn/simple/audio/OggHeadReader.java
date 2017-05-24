@@ -27,9 +27,8 @@ package de.ralleytn.simple.audio;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,142 +43,29 @@ public class OggHeadReader implements HeadReader {
 	public Map<String, ?> read(URL resource) throws IOException {
 		
 		Map<String, Object> headers = new HashMap<>();
+		int[] sequence = {0x76, 0x6F, 0x72, 0x62, 0x69, 0x73};
 		
-		try(InputStream in = resource.openStream()) {
+		try(InputStream inputStream = resource.openStream()) {
 			
-			int data = -1;
-			boolean currentlyInHeader = false;
-			int header = -1;
-			int identificationHeaderReadBytes = 0;
-			int vendorLengthBytesRead = 0;
-			int userCommentListLengthBytesRead = 0;
-			int userCommentListEntryLengthBytesRead = 0;
-			long vendorLength = -1;
-			long userCommentListLength = -1;
-			long userCommentListIndex = 0;
-			long userCommentListEntryLength = -1;
-			List<Integer> readData = new ArrayList<>();
-			List<Integer> vendor = new ArrayList<>();
-			List<Integer> userCommentListEntry = new ArrayList<>();
-			boolean vendorRead = false;
-			int buffer = 1;
-			int buffer2 = 1;
+			Utils.readUntil(inputStream, sequence);
+			headers.put("ogg.vorbis_version", Utils.readUnsignedInt(inputStream));
+			headers.put("ogg.audio_channels", inputStream.read());
+			headers.put("ogg.audio_sample_rate", Utils.readUnsignedInt(inputStream));
+			headers.put("ogg.bitrate_maximum", Utils.readSignedInt(inputStream));
+			headers.put("ogg.bitrate_nominal", Utils.readSignedInt(inputStream));
+			headers.put("ogg.bitrate_minimum", Utils.readSignedInt(inputStream));
+			int blocksize = inputStream.read();
+			headers.put("ogg.blocksize_0", (blocksize >> 4) & 0b1111);
+			headers.put("ogg.blocksize_1", blocksize & 0b1111);
+			headers.put("ogg.framing_flag", ((inputStream.read() >> 7) & 0b1) == 1);
+			Utils.readUntil(inputStream, sequence);
+			headers.put("ogg.vendor", Utils.readString(inputStream, (int)Utils.readUnsignedInt(inputStream), StandardCharsets.UTF_8));
+			long userCommentListLength = Utils.readUnsignedInt(inputStream);
 			
-			while((data = in.read()) != -1) {
+			for(long index = 0; index < userCommentListLength; index++) {
 				
-				if(!currentlyInHeader && readData.size() > 4) {
-					
-					int b1 = readData.get(readData.size() - 5);
-					int b2 = readData.get(readData.size() - 4);
-					int b3 = readData.get(readData.size() - 3);
-					int b4 = readData.get(readData.size() - 2);
-					int b5 = readData.get(readData.size() - 1);
-					int b6 = data;
-					
-					if(b1 == 0x76 && b2 == 0x6F && b3 == 0x72 && b4 == 0x62 && b5 == 0x69 && b6 == 0x73) {
-						
-						currentlyInHeader = true;
-						header++;
-					}
-					
-				} else {
-					
-					if(header == 0) {
-						
-						identificationHeaderReadBytes++;
-						
-						if(identificationHeaderReadBytes == 23) {
-							
-							headers.put("ogg.framing_flag", ((data >> 7) & 0b1) == 1);
-							headers.put("ogg.blocksize_1", readData.get(readData.size() - 1) & 0b1111);
-							headers.put("ogg.blocksize_0", (readData.get(readData.size() - 1) >> 4) & 0b1111);
-							headers.put("ogg.bitrate_minimum", BinaryUtils.getSignedInteger(readData.get(readData.size() - 2), readData.get(readData.size() - 3), readData.get(readData.size() - 4), readData.get(readData.size() - 5)));
-							headers.put("ogg.bitrate_nominal", BinaryUtils.getSignedInteger(readData.get(readData.size() - 6), readData.get(readData.size() - 7), readData.get(readData.size() - 8), readData.get(readData.size() - 9)));
-							headers.put("ogg.bitrate_maximum", BinaryUtils.getSignedInteger(readData.get(readData.size() - 10), readData.get(readData.size() - 11), readData.get(readData.size() - 12), readData.get(readData.size() - 13)));
-							headers.put("ogg.audio_sample_rate", BinaryUtils.getUnsignedInteger(readData.get(readData.size() - 14), readData.get(readData.size() - 15), readData.get(readData.size() - 16), readData.get(readData.size() - 17)));
-							headers.put("ogg.audio_channels", readData.get(readData.size() - 18));
-							headers.put("ogg.vorbis_version", BinaryUtils.getUnsignedInteger(readData.get(readData.size() - 19), readData.get(readData.size() - 20), readData.get(readData.size() - 21), readData.get(readData.size() - 22)));
-							currentlyInHeader = false;
-						}
-						
-					} else if(header == 1) {
-						
-						if(!vendorRead) {
-							
-							if(vendorLengthBytesRead < 4) {
-								
-								vendorLengthBytesRead++;
-								
-							} else {
-								
-								if(vendorLength == -1) {
-									
-									vendorLength = BinaryUtils.getUnsignedInteger(readData.get(readData.size() - buffer), readData.get(readData.size() - (buffer + 1)), readData.get(readData.size() - (buffer + 2)), readData.get(readData.size() - (buffer + 3)));
-									buffer++;
-								}
-								
-								if(vendor.size() < vendorLength) {
-									
-									vendor.add(data);
-									
-								} else {
-									
-									headers.put("ogg.vendor", new String(BinaryUtils.toByteArray(vendor), "UTF-8"));
-									vendorRead = true;
-								}
-							}
-							
-						} else {
-
-							if(userCommentListLengthBytesRead < 4) {
-								
-								userCommentListLengthBytesRead++;
-								
-							} else {
-								
-								if(userCommentListLength == -1) {
-
-									userCommentListLength = BinaryUtils.getUnsignedInteger(readData.get(readData.size() - buffer), readData.get(readData.size() - (buffer + 1)), readData.get(readData.size() - (buffer + 2)), readData.get(readData.size() - (buffer + 3)));
-								}
-								
-								if(userCommentListIndex < userCommentListLength) {
-									
-									if(userCommentListEntryLengthBytesRead < 4) {
-										
-										userCommentListEntryLengthBytesRead++;
-										
-									} else {
-										
-										if(userCommentListEntryLength == -1) {
-
-											userCommentListEntryLength = BinaryUtils.getUnsignedInteger(readData.get(readData.size() - buffer), readData.get(readData.size() - (buffer + 1)), readData.get(readData.size() - (buffer + 2)), readData.get(readData.size() - (buffer + 3)));
-											buffer++;
-										}
-				
-										if(userCommentListEntry.size() < userCommentListEntryLength) {
-											
-											userCommentListEntry.add(readData.get(readData.size() - buffer2));
-											
-										} else {
-											
-											String comment = new String(BinaryUtils.toByteArray(userCommentListEntry), "UTF-8");
-											String[] parts = comment.split("=");
-											headers.put(parts[0], parts[1]);
-											
-											userCommentListEntryLengthBytesRead = 0;
-											userCommentListEntryLength = -1;
-											userCommentListEntry.clear();
-											userCommentListIndex++;
-											buffer2++;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				
-				readData.add(data);
+				String[] comment = Utils.readString(inputStream, (int)Utils.readUnsignedInt(inputStream), StandardCharsets.UTF_8).split("=");
+				headers.put("ogg.comment." + comment[0].toLowerCase(), comment[1]);
 			}
 		}
 		
