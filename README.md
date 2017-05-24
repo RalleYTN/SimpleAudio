@@ -16,10 +16,11 @@ with the standard Java libraries.
 ## Features
 - [x] Support for WAV, AU, AIFF, OGG and MP3 audio files
 - [x] System depending support for AIFC and SND files
-- [x] Reading audio file headers (doesn't work for OGG files yet)
+- [x] Reading audio file headers
 - [x] A unified way of playing audio either buffered or streamed
 - [x] The `Recorder` class which makes recording audio as easy as making coffee
 - [x] Playing audio as a collection with the `Playlist` class
+- [x] Listening to audio events
 
 ## Requirements
 - Java 8 or higher
@@ -28,6 +29,7 @@ with the standard Java libraries.
 Just put the `.jar` files on your class path.
 
 # Links
+See the [guide](https://github.com/RalleYTN/SimpleAudio/wiki) on how to use the libary
 See the [roadmap](https://trello.com/b/a3o9JKrC)  
 See the [online documentation](https://ralleytn.github.io/SimpleAudio/)  
 See the [changelog](https://github.com/RalleYTN/SimpleAudio/blob/master/CHANGELOG.md)  

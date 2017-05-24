@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2017 Ralph Niemitz
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package de.ralleytn.simple.audio;
 
 import java.io.File;
@@ -28,17 +52,18 @@ import org.tritonus.share.sampled.file.TAudioFileFormat;
 /**
  * Implements the {@linkplain Audio} and should be extended by all classes representing a form of playable audio.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.1.0
+ * @version 1.2.0
  * @since 1.0.0
  */
 public abstract class AbstractAudio implements Audio {
 
-	protected URL resource;
-	protected FileFormat fileFormat;
-	protected AudioInputStream audioInputStream;
-	protected HashMap<String, Control> controls;
-	protected boolean open;
-	protected List<AudioListener> listeners = new ArrayList<>();
+	protected volatile URL resource;
+	protected volatile FileFormat fileFormat;
+	protected volatile AudioInputStream audioInputStream;
+	protected volatile HashMap<String, Control> controls;
+	protected volatile boolean open;
+	protected volatile boolean paused;
+	protected volatile List<AudioListener> listeners = new ArrayList<>();
 	
 	/**
 	 * @param file name of the resource file
@@ -226,13 +251,19 @@ public abstract class AbstractAudio implements Audio {
 		FloatControl control = (FloatControl)this.controls.get("Master Gain");
 		float min = control.getMinimum();
 		float max = control.getMaximum();
-		control.setValue(volume < min ? min : (volume > max ? max : volume));
+		float oldVal = control.getValue();
+		float newVal = volume < min ? min : (volume > max ? max : volume);
+		control.setValue(newVal);
+		this.trigger(AudioEvent.Type.VOLUME_CHANGED, oldVal, newVal);
 	}
 
 	@Override
 	public void setMute(boolean mute) {
 		
-		((BooleanControl)this.controls.get("Mute")).setValue(mute);
+		BooleanControl control = (BooleanControl)this.controls.get("Mute");
+		boolean oldVal = control.getValue();
+		control.setValue(mute);
+		this.trigger(AudioEvent.Type.MUTE_CHANGED, oldVal, mute);
 	}
 	
 	@Override
@@ -316,6 +347,12 @@ public abstract class AbstractAudio implements Audio {
 	}
 	
 	@Override
+	public boolean isPaused() {
+		
+		return this.paused;
+	}
+	
+	@Override
 	public Map<?, ?> getHeaders() {
 		
 		Map<?, ?> headers = null;
@@ -355,7 +392,14 @@ public abstract class AbstractAudio implements Audio {
 				break;
 				
 			case OGG:
-				// Still don't know how to read the OGG headers.
+				try {
+					
+					headers = new OggHeadReader().read(this.resource);
+					
+				} catch(IOException exception) {
+					
+					exception.printStackTrace();
+				}
 				break;
 		}
 		
@@ -365,6 +409,12 @@ public abstract class AbstractAudio implements Audio {
 	protected void trigger(AudioEvent.Type type) {
 		
 		AudioEvent event = new AudioEvent(this, type);
+		this.listeners.forEach(listener -> listener.update(event));
+	}
+	
+	protected void trigger(AudioEvent.Type type, Object oldVal, Object newVal) {
+		
+		AudioEvent event = new AudioEvent(this, type, oldVal, newVal);
 		this.listeners.forEach(listener -> listener.update(event));
 	}
 	
