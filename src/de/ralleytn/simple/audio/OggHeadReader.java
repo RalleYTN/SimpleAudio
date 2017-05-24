@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * Reads the head informations from an Ogg Vorbis file as described <a href="https://xiph.org/vorbis/doc/Vorbis_I_spec.html">here</a>.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 1.2.1
  * @since 1.2.0
  */
 public class OggHeadReader implements HeadReader {
