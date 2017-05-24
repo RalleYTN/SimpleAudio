@@ -34,3 +34,8 @@ See the [roadmap](https://trello.com/b/a3o9JKrC)
 See the [online documentation](https://ralleytn.github.io/SimpleAudio/)  
 See the [changelog](https://github.com/RalleYTN/SimpleAudio/blob/master/CHANGELOG.md)  
 See the [download page](https://github.com/RalleYTN/SimpleAudio/releases)  
+
+# Dependencies
+[JLayer 1.0.1](http://www.javazoom.net/javalayer/sources.html)  
+[MP3 SPI 1.9.5](http://www.javazoom.net/mp3spi/mp3spi.html)  
+[tritonus](http://www.tritonus.org/)
