@@ -24,6 +24,7 @@
 
 package de.ralleytn.simple.audio;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -36,7 +37,7 @@ import javax.sound.sampled.TargetDataLine;
 /**
  * Records audio from an input device.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.1.0
+ * @version 1.2.2
  * @since 1.0.0
  */
 public class Recorder {
@@ -58,7 +59,7 @@ public class Recorder {
 	 */
 	public Recorder() throws AudioException {
 		
-		this(FileFormat.WAV, new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 2, 4, 44100, false));
+		this(FileFormat.AU, new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 2, 4, 44100, false));
 	}
 	
 	/**
@@ -90,6 +91,44 @@ public class Recorder {
 		} else {
 			
 			throw new AudioException("The given file format does not support writing!");
+		}
+	}
+	
+	/**
+	 * Starts the recording and writes the data in the given file.
+	 * @param output the file to which the data will be written
+	 * @throws AudioException if the line cannot be opened due to resource restrictions
+	 * @since 1.2.2
+	 */
+	public void start(File output) throws AudioException {
+		
+		if(!this.running) {
+			
+			try {
+				
+				this.line.open();
+				this.line.start();
+				this.recordingStartTime = System.currentTimeMillis();
+				this.running = true;
+				
+				new Thread(() -> {
+					
+					try {
+						
+						Recorder.this.input = new AudioInputStream(Recorder.this.line);
+						AudioSystem.write(Recorder.this.input, Recorder.this.fileFormat.getType(), output);
+					
+					} catch(IOException exception) {
+						
+						exception.printStackTrace();
+					}
+
+				}).start();
+				
+			} catch(Exception exception) {
+				
+				throw new AudioException(exception);
+			}
 		}
 	}
 

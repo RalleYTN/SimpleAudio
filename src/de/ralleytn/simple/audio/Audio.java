@@ -36,12 +36,14 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
 
-import de.john.jarnbjo.JOgg;
+import de.jarnbjo.ogg.LogicalOggStream;
+import de.jarnbjo.ogg.OnDemandUrlStream;
+import de.jarnbjo.vorbis.VorbisStream;
 
 /**
  * Interface containing all the methods a good audio implementation should have.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.1.0
+ * @version 1.2.2
  * @since 1.0.0
  */
 public interface Audio extends Playable {
@@ -211,6 +213,15 @@ public interface Audio extends Playable {
 	}
 	
 	/**
+	 * @return The default audio format used in the Java Sound API
+	 * @since 1.2.2
+	 */
+	public static AudioFormat getDefaultAudioFormat() {
+		
+		return new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 2, 4, 44100, false);
+	}
+	
+	/**
 	 * @param resource the resource from which you want the {@linkplain AudioInputStream} from
 	 * @return the {@linkplain AudioInputStream} from the resource
 	 * @throws AudioException if something went wrong while retrieving the {@linkplain AudioInputStream}
@@ -232,7 +243,15 @@ public interface Audio extends Playable {
 					break;
 	
 				case OGG:
-					audioInputStream = JOgg.getAudioInputStream(resource);
+					LogicalOggStream loggs = (LogicalOggStream)new OnDemandUrlStream(resource).getLogicalStreams().iterator().next();
+					
+					if(!loggs.getFormat().equals(LogicalOggStream.FORMAT_VORBIS)) {
+						
+						throw new AudioException("Not a plain Ogg/Vorbis audio file!");
+					}
+					
+					VorbisInputStream vis = new VorbisInputStream(new VorbisStream(loggs));
+					audioInputStream = new AudioInputStream(vis, vis.getAudioFormat(), -1L);
 					break;
 	
 				case AU:
