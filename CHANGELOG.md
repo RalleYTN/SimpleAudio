@@ -4,6 +4,7 @@
 - Added the method `Audio.getDefaultAudioFormat()`.
 - The `Recorder` class now uses the AU file format because it doesn't need a pre-defined length.
 - Replaced the `ogg-vorbis.jar` with `j-ogg.jar`.
+asasdjadja
 
 ## Version 1.2.1
 - Found a more elegant solution for reading the OGG headers.
