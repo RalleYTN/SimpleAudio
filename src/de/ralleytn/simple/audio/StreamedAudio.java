@@ -40,7 +40,7 @@ import javax.sound.sampled.SourceDataLine;
 /**
  * Never loads the entire audio data into the RAM. Good for music and long audio.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 2.0.0
  * @since 1.0.0
  */
 public class StreamedAudio extends AbstractAudio {

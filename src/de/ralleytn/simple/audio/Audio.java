@@ -39,11 +39,12 @@ import javax.sound.sampled.SourceDataLine;
 import de.jarnbjo.ogg.LogicalOggStream;
 import de.jarnbjo.ogg.OnDemandUrlStream;
 import de.jarnbjo.vorbis.VorbisStream;
+import de.ralleytn.simple.audio.internal.VorbisInputStream;
 
 /**
  * Interface containing all the methods a good audio implementation should have.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.2
+ * @version 2.0.0
  * @since 1.0.0
  */
 public interface Audio extends Playable {

@@ -1,4 +1,9 @@
 # Changelog
+## Version 2.0.0
+- Made the project modular for Java 9 (should still be compatible with Java 8 and below though; not tested)
+- Added some more documentation
+- Created the package "de.ralleytb.simple.audio.internal" and moved the "Utils" and "VorbisInputStream" classes in it
+
 ## Version 1.2.2
 - Added the method `Recorder.start(File)`.
 - Added the method `Audio.getDefaultAudioFormat()`.

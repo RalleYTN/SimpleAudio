@@ -27,7 +27,7 @@ package de.ralleytn.simple.audio;
 /**
  * Is thrown when an error inside of SimpleAudio happens.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.0.0
+ * @version 2.0.0
  * @since 1.0.0
  */
 public class AudioException extends Exception {

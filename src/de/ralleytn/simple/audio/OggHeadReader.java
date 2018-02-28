@@ -31,10 +31,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.ralleytn.simple.audio.internal.Utils;
+
 /**
  * Reads the head informations from an Ogg Vorbis file as described <a href="https://xiph.org/vorbis/doc/Vorbis_I_spec.html">here</a>.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.1
+ * @version 2.0.0
  * @since 1.2.0
  */
 public class OggHeadReader implements HeadReader {

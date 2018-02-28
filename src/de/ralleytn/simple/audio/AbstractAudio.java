@@ -52,7 +52,7 @@ import org.tritonus.share.sampled.file.TAudioFileFormat;
 /**
  * Implements the {@linkplain Audio} and should be extended by all classes representing a form of playable audio.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 2.0.0
  * @since 1.0.0
  */
 public abstract class AbstractAudio implements Audio {
@@ -406,18 +406,37 @@ public abstract class AbstractAudio implements Audio {
 		return headers;
 	}
 	
+	/**
+	 * Triggers a new {@linkplain AudioEvent}.
+	 * @param type the event type
+	 * @since 1.1.0
+	 */
 	protected void trigger(AudioEvent.Type type) {
 		
 		AudioEvent event = new AudioEvent(this, type);
 		this.listeners.forEach(listener -> listener.update(event));
 	}
 	
+	/**
+	 * Triggers a new {@linkplain AudioEvent}.
+	 * @param type the event type
+	 * @param oldVal the old value
+	 * @param newVal the new value
+	 * @since 1.1.0
+	 */
 	protected void trigger(AudioEvent.Type type, Object oldVal, Object newVal) {
 		
 		AudioEvent event = new AudioEvent(this, type, oldVal, newVal);
 		this.listeners.forEach(listener -> listener.update(event));
 	}
 	
+	/**
+	 * Extracts the controls from a {@linkplain Line} based on an old control map.
+	 * @param line the {@linkplain Line}
+	 * @param old the old control map
+	 * @return a new control map based on an old one
+	 * @since 1.0.0
+	 */
 	protected static final HashMap<String, Control> extractControls(Line line, Map<String, Control> old) {
 		
 		HashMap<String, Control> controls = new HashMap<>();

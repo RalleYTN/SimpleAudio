@@ -27,7 +27,7 @@ package de.ralleytn.simple.audio;
 /**
  * Represents an audio event.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 2.0.0
  * @since 1.1.0
  */
 public class AudioEvent {
@@ -102,7 +102,7 @@ public class AudioEvent {
 	/**
 	 * Represents a type that an audio event can be.
 	 * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
-	 * @version 1.2.0
+	 * @version 2.0.0
 	 * @since 1.1.0
 	 */
 	public static enum Type {

@@ -32,7 +32,7 @@ import javax.sound.sampled.AudioFileFormat;
 /**
  * Represents a file format for audio files.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.1.0
+ * @version 2.0.0
  * @since 1.0.0
  */
 public enum FileFormat {

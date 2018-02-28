@@ -38,7 +38,7 @@ import javax.sound.sampled.LineEvent;
 /**
  * Reads the entire audio data into the RAM. Good for small sound effects.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 2.0.0
  * @since 1.0.0
  */
 public class BufferedAudio extends AbstractAudio {

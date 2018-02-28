@@ -27,7 +27,7 @@ package de.ralleytn.simple.audio;
 /**
  * Listens to playlist events.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 2.0.0
  * @since 1.2.0
  */
 public interface PlaylistListener {

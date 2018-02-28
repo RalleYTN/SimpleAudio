@@ -31,7 +31,7 @@ import java.util.List;
  * Stores multiple {@linkplain Audio}s and plays them in a batch.
  * Handy if you want to program an audio player.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 1.2.0
+ * @version 2.0.0
  * @since 1.1.0
  */
 public class Playlist implements Playable {
