@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.ralleytn.simple.audio.internal.Utils;
+import de.ralleytn.simple.audio.internal.Util;
 
 /**
  * Reads the head informations from an Ogg Vorbis file as described <a href="https://xiph.org/vorbis/doc/Vorbis_I_spec.html">here</a>.
@@ -49,24 +49,24 @@ public class OggHeadReader implements HeadReader {
 		
 		try(InputStream inputStream = resource.openStream()) {
 			
-			Utils.readUntil(inputStream, sequence);
-			headers.put("ogg.vorbis_version", Utils.readUnsignedInt(inputStream));
+			Util.readUntil(inputStream, sequence);
+			headers.put("ogg.vorbis_version", Util.readUnsignedInt(inputStream));
 			headers.put("ogg.audio_channels", inputStream.read());
-			headers.put("ogg.audio_sample_rate", Utils.readUnsignedInt(inputStream));
-			headers.put("ogg.bitrate_maximum", Utils.readSignedInt(inputStream));
-			headers.put("ogg.bitrate_nominal", Utils.readSignedInt(inputStream));
-			headers.put("ogg.bitrate_minimum", Utils.readSignedInt(inputStream));
+			headers.put("ogg.audio_sample_rate", Util.readUnsignedInt(inputStream));
+			headers.put("ogg.bitrate_maximum", Util.readSignedInt(inputStream));
+			headers.put("ogg.bitrate_nominal", Util.readSignedInt(inputStream));
+			headers.put("ogg.bitrate_minimum", Util.readSignedInt(inputStream));
 			int blocksize = inputStream.read();
 			headers.put("ogg.blocksize_0", (blocksize >> 4) & 0b1111);
 			headers.put("ogg.blocksize_1", blocksize & 0b1111);
 			headers.put("ogg.framing_flag", ((inputStream.read() >> 7) & 0b1) == 1);
-			Utils.readUntil(inputStream, sequence);
-			headers.put("ogg.vendor", Utils.readString(inputStream, (int)Utils.readUnsignedInt(inputStream), StandardCharsets.UTF_8));
-			long userCommentListLength = Utils.readUnsignedInt(inputStream);
+			Util.readUntil(inputStream, sequence);
+			headers.put("ogg.vendor", Util.readString(inputStream, (int)Util.readUnsignedInt(inputStream), StandardCharsets.UTF_8));
+			long userCommentListLength = Util.readUnsignedInt(inputStream);
 			
 			for(long index = 0; index < userCommentListLength; index++) {
 				
-				String[] comment = Utils.readString(inputStream, (int)Utils.readUnsignedInt(inputStream), StandardCharsets.UTF_8).split("=");
+				String[] comment = Util.readString(inputStream, (int)Util.readUnsignedInt(inputStream), StandardCharsets.UTF_8).split("=");
 				headers.put("ogg.comment." + comment[0].toLowerCase(), comment[1]);
 			}
 		}

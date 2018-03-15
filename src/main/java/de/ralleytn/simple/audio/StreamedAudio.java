@@ -44,7 +44,7 @@ import javax.sound.sampled.SourceDataLine;
  * @since 1.0.0
  */
 public class StreamedAudio extends AbstractAudio {
-
+	
 	private SourceDataLine line;
 	private boolean playing;
 	private boolean looping;
@@ -285,7 +285,7 @@ public class StreamedAudio extends AbstractAudio {
 		
 		try {
 			
-			this.audioInputStream = Audio.getAudioInputStream(this.resource);
+			this.audioInputStream = AbstractAudio.getAudioInputStream(this.resource);
 			this.microsecondLength = (long)(1000000 * (this.audioInputStream.getFrameLength() / this.audioInputStream.getFormat().getFrameRate()));
 			this.frameLength = this.audioInputStream.getFrameLength();
 			
@@ -301,7 +301,7 @@ public class StreamedAudio extends AbstractAudio {
 
 				this.frameLength /= this.audioInputStream.getFormat().getFrameSize();
 				this.audioInputStream.close();
-				this.audioInputStream = Audio.getAudioInputStream(this.resource);
+				this.audioInputStream = AbstractAudio.getAudioInputStream(this.resource);
 				this.microsecondLength = (long)(1000000 * (frameLength / this.audioInputStream.getFormat().getFrameRate()));
 			}
 			
@@ -416,7 +416,7 @@ public class StreamedAudio extends AbstractAudio {
 			
 			try {
 				
-				while((currentRepetition < this.repetitions || this.repetitions == Audio.LOOP_ENDLESS) && StreamedAudio.this.looping) {
+				while((currentRepetition < this.repetitions || this.repetitions == AbstractAudio.LOOP_ENDLESS) && StreamedAudio.this.looping) {
 					
 					StreamedAudio.this.line.start();
 					byte[] buffer = new byte[StreamedAudio.this.audioInputStream.getFormat().getFrameSize()];
@@ -487,8 +487,14 @@ public class StreamedAudio extends AbstractAudio {
 						
 						if(!StreamedAudio.this.paused) {
 							
-							StreamedAudio.this.trigger(AudioEvent.Type.REACHED_END);
+							// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+							// -	Fixed a bug that would reopen the audio if it was closed in the REACHED_END event
+							// ====
+							
 							StreamedAudio.this.reset();
+							StreamedAudio.this.playing = true; // Just to make sure that StreamedAudio and BufferedAudio have the same behavior
+							StreamedAudio.this.trigger(AudioEvent.Type.REACHED_END);
+							StreamedAudio.this.playing = false;
 							StreamedAudio.this.servicePlay.shutdown();
 						}
 						

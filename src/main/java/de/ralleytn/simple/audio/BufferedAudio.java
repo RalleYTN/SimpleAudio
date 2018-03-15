@@ -38,12 +38,17 @@ import javax.sound.sampled.LineEvent;
 /**
  * Reads the entire audio data into the RAM. Good for small sound effects.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 2.0.0
+ * @version 2.0.1
  * @since 1.0.0
  */
 public class BufferedAudio extends AbstractAudio {
-
+	
+	// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+	// -	Fixed a bug that caused isPlaying() to return a wrong result
+	// ====
+	
 	private Clip clip;
+	private boolean playing;
 	
 	/**
 	 * @param file name of the resource file
@@ -146,6 +151,7 @@ public class BufferedAudio extends AbstractAudio {
 		
 		this.clip.start();
 		this.paused = false;
+		this.playing = true;
 		this.trigger(AudioEvent.Type.STARTED);
 	}
 
@@ -156,6 +162,7 @@ public class BufferedAudio extends AbstractAudio {
 			
 			this.clip.stop();
 			this.paused = true;
+			this.playing = false;
 			this.trigger(AudioEvent.Type.PAUSED);
 		}
 	}
@@ -167,6 +174,7 @@ public class BufferedAudio extends AbstractAudio {
 			
 			this.clip.start();
 			this.paused = false;
+			this.playing = true;
 			this.trigger(AudioEvent.Type.RESUMED);
 			
 		} else {
@@ -181,6 +189,7 @@ public class BufferedAudio extends AbstractAudio {
 		this.clip.stop();
 		this.clip.setMicrosecondPosition(0);
 		this.paused = false;
+		this.playing = false;
 		this.trigger(AudioEvent.Type.STOPPED);
 	}
 
@@ -194,6 +203,7 @@ public class BufferedAudio extends AbstractAudio {
 		
 		this.paused = false;
 		this.clip.loop(repetitions);
+		this.playing = true;
 	}
 
 	@Override
@@ -211,7 +221,7 @@ public class BufferedAudio extends AbstractAudio {
 
 		try {
 			
-			this.audioInputStream = Audio.getAudioInputStream(this.resource);
+			this.audioInputStream = AbstractAudio.getAudioInputStream(this.resource);
 			this.clip = AudioSystem.getClip();
 			this.clip.open(this.audioInputStream);
 			this.clip.addLineListener(event -> {
@@ -274,7 +284,7 @@ public class BufferedAudio extends AbstractAudio {
 	@Override
 	public boolean isPlaying() {
 		
-		return this.clip.isRunning();
+		return this.playing;
 	}
 
 	@Override

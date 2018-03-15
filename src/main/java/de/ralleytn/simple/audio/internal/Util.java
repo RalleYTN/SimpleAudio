@@ -34,12 +34,12 @@ import java.util.List;
 /**
  * Contains some utility methods.
  * @author Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
- * @version 2.0.0
+ * @version 2.0.1
  * @since 1.2.0
  */
-public final class Utils {
+public final class Util {
 
-	private Utils() {}
+	private Util() {}
 	
 	/**
 	 * Skips bytes in an {@linkplain InputStream} until it finds the given sequence.
@@ -94,8 +94,8 @@ public final class Utils {
 	 */
 	public static final String readString(InputStream inputStream, int length, Charset charset) throws IOException {
 		
-		int[] octets = Utils.read(inputStream, length);
-		return new String(Utils.toByteArray(octets), charset.name());
+		int[] octets = Util.read(inputStream, length);
+		return new String(Util.toByteArray(octets), charset.name());
 	}
 
 	/**
@@ -107,8 +107,8 @@ public final class Utils {
 	 */
 	public static final long readUnsignedInt(InputStream inputStream) throws IOException {
 		
-		int[] octets = Utils.read(inputStream, 4);
-		return Utils.getUnsignedInteger(octets[3], octets[2], octets[1], octets[0]);
+		int[] octets = Util.read(inputStream, 4);
+		return Util.getUnsignedInteger(octets[3], octets[2], octets[1], octets[0]);
 	}
 	
 	/**
@@ -120,8 +120,8 @@ public final class Utils {
 	 */
 	public static final int readSignedInt(InputStream inputStream) throws IOException {
 		
-		int[] octets = Utils.read(inputStream, 4);
-		return Utils.getSignedInteger(octets[3], octets[2], octets[1], octets[0]);
+		int[] octets = Util.read(inputStream, 4);
+		return Util.getSignedInteger(octets[3], octets[2], octets[1], octets[0]);
 	}
 	
 	/**
@@ -155,7 +155,7 @@ public final class Utils {
 	 */
 	public static final long getUnsignedInteger(int o1, int o2, int o3, int o4) {
 		
-		return Utils.getSignedInteger(o1, o2, o3, o4) & 0xFFFFFFFFL;
+		return Util.getSignedInteger(o1, o2, o3, o4) & 0xFFFFFFFFL;
 	}
 	
 	/**
@@ -191,16 +191,24 @@ public final class Utils {
 	 */
 	public static final byte[] toByteArray(List<Integer> integers) {
 		
+		// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+		// -	Made this method not throw a RuntimeException.
+		// 		It will never happen anyway.
+		// ====
+		
+		byte[] array = null;
+		
 		try(ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
 			
 			integers.forEach(buffer::write);
-			return buffer.toByteArray();
+			array = buffer.toByteArray();
 			
 		} catch(IOException exception) {
 			
-			// SHOULD NEVER HAPPEN!
-			throw new RuntimeException(exception);
+			// DO NOTHING!
 		}
+		
+		return array;
 	}
 	
 	/**
@@ -211,6 +219,13 @@ public final class Utils {
 	 */
 	public static final byte[] toByteArray(int[] integers) {
 		
+		// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+		// -	Made this method not throw a RuntimeException.
+		// 		It will never happen anyway.
+		// ====
+		
+		byte[] array = null;
+		
 		try(ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
 			
 			for(int integer : integers) {
@@ -218,12 +233,13 @@ public final class Utils {
 				buffer.write(integer);
 			}
 			
-			return buffer.toByteArray();
+			array = buffer.toByteArray();
 			
 		} catch(IOException exception) {
 			
-			// SHOULD NEVER HAPPEN!
-			throw new RuntimeException(exception);
+			// DO NOTHING!
 		}
+		
+		return array;
 	}
 }
