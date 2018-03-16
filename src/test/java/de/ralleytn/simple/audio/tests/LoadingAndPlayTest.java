@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import de.ralleytn.simple.audio.Audio;
@@ -15,18 +14,6 @@ import de.ralleytn.simple.audio.BufferedAudio;
 import de.ralleytn.simple.audio.StreamedAudio;
 
 class LoadingAndPlayTest {
-
-	private static final String RESOURCE_LOCATION = "de/ralleytn/simple/audio/tests/";
-	
-	private static final URL getResource(String name) {
-		
-		return LoadingAndPlayTest.class.getClassLoader().getResource(String.format("%s%s", RESOURCE_LOCATION, name));
-	}
-	
-	private static final void fail(Exception exception) {
-		
-		Assertions.fail(String.format("%s: %s", exception.getClass().getName(), exception.getMessage()));
-	}
 	
 	private static final void testAudio(Audio audio) throws AudioException {
 		
@@ -58,13 +45,13 @@ class LoadingAndPlayTest {
 		
 		try {
 			
-			URL resource = getResource("audio.aiff");
+			URL resource = TestUtil.getResource("audio.aiff");
 			testAudio(new BufferedAudio(resource));
 			testAudio(new StreamedAudio(resource));
 			
 		} catch(AudioException exception) {
 			
-			fail(exception);
+			TestUtil.fail(exception);
 		}
 	}
 	
@@ -73,13 +60,13 @@ class LoadingAndPlayTest {
 		
 		try {
 			
-			URL resource = getResource("audio.ogg");
+			URL resource = TestUtil.getResource("audio.ogg");
 			testAudio(new BufferedAudio(resource));
 			testAudio(new StreamedAudio(resource));
 			
 		} catch(AudioException exception) {
 			
-			fail(exception);
+			TestUtil.fail(exception);
 		}
 	}
 	
@@ -88,13 +75,13 @@ class LoadingAndPlayTest {
 		
 		try {
 			
-			URL resource = getResource("audio.au");
+			URL resource = TestUtil.getResource("audio.au");
 			testAudio(new BufferedAudio(resource));
 			testAudio(new StreamedAudio(resource));
 			
 		} catch(AudioException exception) {
 			
-			fail(exception);
+			TestUtil.fail(exception);
 		}
 	}
 	
@@ -103,13 +90,13 @@ class LoadingAndPlayTest {
 		
 		try {
 			
-			URL resource = getResource("audio.wav");
+			URL resource = TestUtil.getResource("audio.wav");
 			testAudio(new BufferedAudio(resource));
 			testAudio(new StreamedAudio(resource));
 			
 		} catch(AudioException exception) {
 			
-			fail(exception);
+			TestUtil.fail(exception);
 		}
 	}
 	
@@ -118,13 +105,13 @@ class LoadingAndPlayTest {
 		
 		try {
 			
-			URL resource = getResource("audio.mp3");
+			URL resource = TestUtil.getResource("audio.mp3");
 			testAudio(new BufferedAudio(resource));
 			testAudio(new StreamedAudio(resource));
 			
 		} catch(AudioException exception) {
 			
-			fail(exception);
+			TestUtil.fail(exception);
 		}
 	}
 }

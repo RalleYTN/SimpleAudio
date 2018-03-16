@@ -237,6 +237,29 @@ public abstract class AbstractAudio implements Audio {
 	}
 	
 	/**
+	 * @param uri the resource as {@linkplain URI}
+	 * @throws AudioException if something is wrong with the resource
+	 * @since 1.0.0
+	 */
+	public AbstractAudio(URI uri) throws AudioException {
+		
+		try {
+			
+			this.resource = uri.toURL();
+			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
+			
+			if(this.fileFormat == null) {
+				
+				throw new AudioException("Unsupported file format!");
+			}
+			
+		} catch(Exception exception) {
+			
+			throw new AudioException(exception);
+		}
+	}
+	
+	/**
 	 * Obtains an array of mixer info objects that represents the set of audio mixers that are
 	 * currently installed on the system.
 	 * @return an array of info objects for the currently installed mixers. If no mixers are available on the system, an array of length 0 is returned
@@ -371,29 +394,6 @@ public abstract class AbstractAudio implements Audio {
     		
     	}).start();
     }
-	
-	/**
-	 * @param uri the resource as {@linkplain URI}
-	 * @throws AudioException if something is wrong with the resource
-	 * @since 1.0.0
-	 */
-	public AbstractAudio(URI uri) throws AudioException {
-		
-		try {
-			
-			this.resource = uri.toURL();
-			this.fileFormat = FileFormat.getFormatByName(this.resource.toExternalForm());
-			
-			if(this.fileFormat == null) {
-				
-				throw new AudioException("Unsupported file format!");
-			}
-			
-		} catch(Exception exception) {
-			
-			throw new AudioException(exception);
-		}
-	}
 	
 	@Override
 	public void setVolume(float volume) {
