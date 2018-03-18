@@ -45,6 +45,10 @@ import javax.sound.sampled.SourceDataLine;
  */
 public class StreamedAudio extends AbstractAudio {
 	
+	// ==== 18.03.2018 | Ralph Nieitz/RalleYTN(ralph.niemitz@gmx.de)
+	// Made all methods in this class synchronized to fix threading issues.
+	// ====
+	
 	private SourceDataLine line;
 	private boolean playing;
 	private boolean looping;
@@ -139,7 +143,7 @@ public class StreamedAudio extends AbstractAudio {
 	}
 	
 	@Override
-	public void play() {
+	public synchronized void play() {
 		
 		if(this.playing || this.paused) {
 			
@@ -153,7 +157,7 @@ public class StreamedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public void pause() {
+	public synchronized void pause() {
 		
 		if(this.playing && !this.paused) {
 			
@@ -170,7 +174,7 @@ public class StreamedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public void resume() {
+	public synchronized void resume() {
 		
 		if(this.paused) {
 			
@@ -198,7 +202,7 @@ public class StreamedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public void stop() {
+	public synchronized void stop() {
 		
 		this.playing = false;
 		this.looping = false;
@@ -219,7 +223,7 @@ public class StreamedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public void loop(int repetitions) {
+	public synchronized void loop(int repetitions) {
 		
 		if(this.playing || this.paused) {
 			
@@ -233,7 +237,7 @@ public class StreamedAudio extends AbstractAudio {
 	}
 	
 	@Override
-	public void setFramePosition(long frame) {
+	public synchronized void setFramePosition(long frame) {
 		
 		try {
 
@@ -273,15 +277,18 @@ public class StreamedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public void setPosition(long millisecond) {
+	public synchronized void setPosition(long millisecond) {
 
-		float frameRate = this.audioInputStream.getFormat().getFrameRate() / 1000.0F;
-		long framePosition = (long)(frameRate * millisecond);
-		this.setFramePosition(framePosition);
+		if(this.open) {
+			
+			float frameRate = this.audioInputStream.getFormat().getFrameRate() / 1000.0F;
+			long framePosition = (long)(frameRate * millisecond);
+			this.setFramePosition(framePosition);
+		}
 	}
 
 	@Override
-	public void open() throws AudioException {
+	public synchronized void open() throws AudioException {
 		
 		try {
 			
@@ -319,89 +326,96 @@ public class StreamedAudio extends AbstractAudio {
 	}
 
 	@Override
-	public void close() {
+	public synchronized void close() {
 		
-		this.playing = false;
-		this.paused = false;
-		this.pausedWhileLooping = false;
-		
-		if(this.line != null) {
+		if(this.open) {
 			
-			this.line.flush();
-			this.line.close();
-			this.line = null;
-		}
-		
-		try {
+			this.playing = false;
+			this.paused = false;
+			this.open = false;
+			this.pausedWhileLooping = false;
 			
-			if(this.audioInputStream != null) {
+			if(this.line != null) {
 				
-				this.audioInputStream.close();
-				this.audioInputStream = null;
+				this.line.flush();
+				this.line.close();
+				this.line = null;
 			}
 			
-		} catch(IOException exception) {}
+			try {
+				
+				if(this.audioInputStream != null) {
+					
+					this.audioInputStream.close();
+					this.audioInputStream = null;
+				}
+				
+			} catch(IOException exception) {}
+		}
 		
-		this.open = false;
 		this.trigger(AudioEvent.Type.CLOSED);
 	}
 	
 	@Override
-	public long getFrameLength() {
+	public synchronized long getFrameLength() {
 		
 		return this.frameLength;
 	}
 	
 	@Override
-	public long getLength() {
+	public synchronized long getLength() {
 		
 		return this.microsecondLength / 1000;
 	}
 
 	@Override
-	public long getPosition() {
+	public synchronized long getPosition() {
 		
 		return this.line.getMicrosecondPosition() / 1000;
 	}
 
 	@Override
-	public boolean isPlaying() {
+	public synchronized boolean isPlaying() {
 		
 		return this.playing;
 	}
 
 	@Override
-	public float getLevel() {
+	public synchronized float getLevel() {
 		
 		return this.line.getLevel();
 	}
 
 	@Override
-	public AudioFormat getAudioFormat() {
+	public synchronized AudioFormat getAudioFormat() {
 		
 		return this.audioInputStream.getFormat();
 	}
 
 	@Override
-	public int getBufferSize() {
+	public synchronized int getBufferSize() {
 		
 		return this.line.getBufferSize();
 	}
 	
 	@Override
-	public long getFramePosition() {
+	public synchronized long getFramePosition() {
 		
 		return this.line.getLongFramePosition();
 	}
 	
-	private void reset() throws AudioException {
+	private synchronized void reset() throws AudioException {
 		
 		this.close();
 		this.open();
 	}
 	
-	private class ActionLoop implements Runnable {
+	private final class ActionLoop implements Runnable {
 
+		// ==== 18.03.2018 | Ralph Nieitz/RalleYTN(ralph.niemitz@gmx.de)
+		// Made all methods in this class synchronized to fix threading issues.
+		// ====
+		
 		private int repetitions;
 		
 		public ActionLoop(int repetitions) {
@@ -410,8 +424,8 @@ public class StreamedAudio extends AbstractAudio {
 		}
 		
 		@Override
-		public void run() {
-			
+		public synchronized void run() {
+
 			int currentRepetition = 0;
 			
 			try {
@@ -419,6 +433,12 @@ public class StreamedAudio extends AbstractAudio {
 				while((currentRepetition < this.repetitions || this.repetitions == AbstractAudio.LOOP_ENDLESS) && StreamedAudio.this.looping) {
 					
 					StreamedAudio.this.line.start();
+
+					// FIXME
+					// ==== 18.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+					// StreamedAudio.this.audioInputStream.getFormat() throws a NullPointerException due to threading.
+					// I have no idea how to fix it.
+					// ====
 					byte[] buffer = new byte[StreamedAudio.this.audioInputStream.getFormat().getFrameSize()];
 					int read = 0;
 					
@@ -465,57 +485,74 @@ public class StreamedAudio extends AbstractAudio {
 		}
 	}
 	
-	private class ActionPlay implements Runnable {
+	private final class ActionPlay implements Runnable {
 
+		// ==== 18.03.2018 | Ralph Nieitz/RalleYTN(ralph.niemitz@gmx.de)
+		// Made all methods in this class synchronized to fix threading issues.
+		// ====
+		
 		@Override
-		public void run() {
+		public synchronized void run() {
 			
-			StreamedAudio.this.line.start();
-			byte[] buffer = new byte[StreamedAudio.this.audioInputStream.getFormat().getFrameSize()];
-			int read = 0;
+			// ==== 18.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+			// Fixed a NullPointerException with the line. Would be thrown if this was the last track in a playlist.
+			// ====
 			
-			while(!StreamedAudio.this.servicePlay.isShutdown()) {
+			if(StreamedAudio.this.line != null) {
 				
-				if(!StreamedAudio.this.paused) {
+				StreamedAudio.this.line.start();
+				
+				// FIXME
+				// ==== 18.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+				// StreamedAudio.this.audioInputStream.getFormat() throws a NullPointerException due to threading.
+				// I have no idea how to fix it.
+				// ====
+				byte[] buffer = new byte[StreamedAudio.this.audioInputStream.getFormat().getFrameSize()];
+				int read = 0;
+				
+				while(!StreamedAudio.this.servicePlay.isShutdown()) {
 					
-					try {
+					if(!StreamedAudio.this.paused) {
+						
+						try {
 
-						while(StreamedAudio.this.playing && !StreamedAudio.this.paused && (read = StreamedAudio.this.audioInputStream.read(buffer)) > -1) {
-							
-							StreamedAudio.this.line.write(buffer, 0, read);
-						}
-						
-						if(!StreamedAudio.this.paused) {
-							
-							// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
-							// -	Fixed a bug that would reopen the audio if it was closed in the REACHED_END event
-							// ====
-							
-							StreamedAudio.this.reset();
-							StreamedAudio.this.playing = true; // Just to make sure that StreamedAudio and BufferedAudio have the same behavior
-							StreamedAudio.this.trigger(AudioEvent.Type.REACHED_END);
-							StreamedAudio.this.playing = false;
-							StreamedAudio.this.servicePlay.shutdown();
-						}
-						
-					} catch(Exception exception) {
-						
-						exception.printStackTrace();
-					}
-					
-				} else {
-					
-					while(StreamedAudio.this.paused) {
-						
-                        synchronized(StreamedAudio.this.object){
-                            
-                        	try {
-                        		
-								StreamedAudio.this.object.wait();
+							while(StreamedAudio.this.playing && !StreamedAudio.this.paused && (read = StreamedAudio.this.audioInputStream.read(buffer)) > -1) {
 								
-							} catch(InterruptedException exception) {}
-                        }                           
-                    }
+								StreamedAudio.this.line.write(buffer, 0, read);
+							}
+							
+							if(!StreamedAudio.this.paused) {
+								
+								// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+								// -	Fixed a bug that would reopen the audio if it was closed in the REACHED_END event
+								// ====
+								
+								StreamedAudio.this.reset();
+								StreamedAudio.this.playing = true; // Just to make sure that StreamedAudio and BufferedAudio have the same behavior
+								StreamedAudio.this.trigger(AudioEvent.Type.REACHED_END);
+								StreamedAudio.this.playing = false;
+								StreamedAudio.this.servicePlay.shutdown();
+							}
+							
+						} catch(Exception exception) {
+							
+							exception.printStackTrace();
+						}
+						
+					} else {
+						
+						while(StreamedAudio.this.paused) {
+							
+	                        synchronized(StreamedAudio.this.object) {
+	                            
+	                        	try {
+	                        		
+									StreamedAudio.this.object.wait();
+									
+								} catch(InterruptedException exception) {}
+	                        }                           
+	                    }
+					}
 				}
 			}
 		}

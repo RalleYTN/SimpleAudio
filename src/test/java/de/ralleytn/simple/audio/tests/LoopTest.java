@@ -23,13 +23,7 @@
  */
 package de.ralleytn.simple.audio.tests;
 
-import org.junit.jupiter.api.Test;
+class LoopTest {
 
-class RecorderTest {
-
-	@Test
-	void testRecording() {
-		
-		// TODO
-	}
+	
 }

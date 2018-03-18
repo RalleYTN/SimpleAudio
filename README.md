@@ -1,4 +1,5 @@
 [![Build Result](https://travis-ci.org/RalleYTN/SimpleAudio.svg?branch=master)](https://travis-ci.org/RalleYTN/SimpleAudio)
+[![Coverage Status](https://coveralls.io/repos/github/RalleYTN/SimpleAudio/badge.svg?branch=master)](https://coveralls.io/github/RalleYTN/SimpleAudio?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/87a04f7e6823474a83b49daf6acc6e23)](https://www.codacy.com/app/ralph.niemitz/SimpleAudio?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=RalleYTN/SimpleAudio&amp;utm_campaign=Badge_Grade)
 
 # Description
@@ -19,6 +20,8 @@ Code written with it, is highly readable and maintainable.
 - Moved everything static in the `Audio` interface to `AbstractAudio`
 - Fixed a bug that caused `BufferedAudio.isPlaying()` to return a wrong value
 - Fixed a bug that would re-open an instance of `StreamedAudio` if it was closed in the `REACHED_END` event
+- Added a close method in the `Playlist` class
+- Fixed most threading issues in `StreamedAudio`
 
 ### Version 2.0.0 (incompatible with older versions of this library)
 

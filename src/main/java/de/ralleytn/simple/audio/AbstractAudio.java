@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package de.ralleytn.simple.audio;
 
 import java.io.File;
@@ -66,18 +65,22 @@ import de.ralleytn.simple.audio.internal.VorbisInputStream;
  */
 public abstract class AbstractAudio implements Audio {
 
+	// ==== 18.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+	// Made the trigger methods synchronized to prevent concurrent access on the listeners
+	// ====
+	
 	/**
 	 * @since 1.0.0
 	 */
 	public static final int LOOP_ENDLESS = -1;
 	
-	protected volatile URL resource;
-	protected volatile FileFormat fileFormat;
-	protected volatile AudioInputStream audioInputStream;
-	protected volatile HashMap<String, Control> controls;
-	protected volatile boolean open;
-	protected volatile boolean paused;
-	protected volatile List<AudioListener> listeners = new ArrayList<>();
+	protected URL resource;
+	protected FileFormat fileFormat;
+	protected AudioInputStream audioInputStream;
+	protected HashMap<String, Control> controls;
+	protected boolean open;
+	protected boolean paused;
+	protected List<AudioListener> listeners = new ArrayList<>();
 	
 	/**
 	 * @param file name of the resource file
@@ -267,6 +270,11 @@ public abstract class AbstractAudio implements Audio {
 	 */
 	public static Mixer.Info[] getPorts() {
 
+		// FIXME
+		// ==== 17.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+		// AudioSystem.getMixerInfo cuts some of the names for no good reason
+		// ====
+		
 		return AudioSystem.getMixerInfo();
 	}
 	
@@ -562,7 +570,7 @@ public abstract class AbstractAudio implements Audio {
 	 * @param type the event type
 	 * @since 1.1.0
 	 */
-	protected void trigger(AudioEvent.Type type) {
+	protected synchronized void trigger(AudioEvent.Type type) {
 		
 		AudioEvent event = new AudioEvent(this, type);
 		this.listeners.forEach(listener -> listener.update(event));
@@ -575,7 +583,7 @@ public abstract class AbstractAudio implements Audio {
 	 * @param newVal the new value
 	 * @since 1.1.0
 	 */
-	protected void trigger(AudioEvent.Type type, Object oldVal, Object newVal) {
+	protected synchronized void trigger(AudioEvent.Type type, Object oldVal, Object newVal) {
 		
 		AudioEvent event = new AudioEvent(this, type, oldVal, newVal);
 		this.listeners.forEach(listener -> listener.update(event));
@@ -628,7 +636,8 @@ public abstract class AbstractAudio implements Audio {
 		File tempDir = new File(System.getProperty("java.io.tmpdir"));
 		File extracted = new File(tempDir, "simple-audio_buffered-" + System.nanoTime() + extension);
 		
-		try(InputStream input = zip.getInputStream(zipEntry); FileOutputStream output = new FileOutputStream(extracted)) {
+		try(InputStream input = zip.getInputStream(zipEntry);
+			FileOutputStream output = new FileOutputStream(extracted)) {
 			
 			int readBytes = 0;
 			

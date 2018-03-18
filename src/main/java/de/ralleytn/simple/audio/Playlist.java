@@ -318,6 +318,15 @@ public class Playlist implements Playable {
 	}
 	
 	/**
+	 * Calls the {@link Audio#close()} method for all tracks in this playlist.
+	 * @since 2.0.0
+	 */
+	public void close() {
+		
+		this.tracks.forEach(Audio::close);
+	}
+	
+	/**
 	 * Starts the next track.
 	 * @since 1.1.0
 	 */

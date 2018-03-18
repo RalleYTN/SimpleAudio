@@ -172,44 +172,52 @@ public final class Util {
 		return ((o1 & 0xFF) << 24) | ((o2 & 0xFF) << 16) | ((o3 & 0xFF) << 8) | (o4 & 0xFF);
 	}
 	
-	/**
-	 * @param integer the bit chain
-	 * @param position the position of the bit that you want (starting on the right at index 0)
-	 * @return {@code true} = 1, {@code false} = 0
-	 * @since 1.2.0
-	 */
-	public static final boolean getBit(int integer, int position) {
-		
-		return ((integer >> position) & 1) == 1;
-	}
+	// ==== 17.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+	// Since this method is internal and no classes inside this library use it, it is dead code.
+	// ====
 	
-	/**
-	 * Converts a list of {@code int}s into a {@code byte} array.
-	 * @param integers the {@code int} list
-	 * @return the resulting {@code byte} array
-	 * @since 1.2.0
-	 */
-	public static final byte[] toByteArray(List<Integer> integers) {
-		
-		// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
-		// -	Made this method not throw a RuntimeException.
-		// 		It will never happen anyway.
-		// ====
-		
-		byte[] array = null;
-		
-		try(ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-			
-			integers.forEach(buffer::write);
-			array = buffer.toByteArray();
-			
-		} catch(IOException exception) {
-			
-			// DO NOTHING!
-		}
-		
-		return array;
-	}
+//	/**
+//	 * @param integer the bit chain
+//	 * @param position the position of the bit that you want (starting on the right at index 0)
+//	 * @return {@code true} = 1, {@code false} = 0
+//	 * @since 1.2.0
+//	 */
+//	public static final boolean getBit(int integer, int position) {
+//		
+//		return ((integer >> position) & 1) == 1;
+//	}
+	
+	// ==== 17.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+	// Since this method is internal and no classes inside this library use it, it is dead code.
+	// ====
+	
+//	/**
+//	 * Converts a list of {@code int}s into a {@code byte} array.
+//	 * @param integers the {@code int} list
+//	 * @return the resulting {@code byte} array
+//	 * @since 1.2.0
+//	 */
+//	public static final byte[] toByteArray(List<Integer> integers) {
+//		
+//		// ==== 15.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+//		// -	Made this method not throw a RuntimeException.
+//		// 		It will never happen anyway.
+//		// ====
+//		
+//		byte[] array = null;
+//		
+//		try(ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+//			
+//			integers.forEach(buffer::write);
+//			array = buffer.toByteArray();
+//			
+//		} catch(IOException exception) {
+//			
+//			// DO NOTHING!
+//		}
+//		
+//		return array;
+//	}
 	
 	/**
 	 * Converts an array of {@code int}s into a {@code byte} array.

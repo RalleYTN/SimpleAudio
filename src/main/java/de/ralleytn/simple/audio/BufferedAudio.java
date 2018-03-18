@@ -244,22 +244,30 @@ public class BufferedAudio extends AbstractAudio {
 	@Override
 	public void close() {
 		
-		if(this.isPlaying()) {
+		// ==== 18.03.2018 | Ralph Niemitz/RalleYTN(ralph.niemitz@gmx.de)
+		// Fixed a NullPointerException that was thrown if this method is called without #open being called first.
+		// ====
+		
+		if(this.open) {
 			
-			this.stop();
+			if(this.isPlaying()) {
+				
+				this.stop();
+			}
+			
+			this.clip.flush();
+			this.clip.close();
+			this.controls.clear();
+			
+			try {
+				
+				this.audioInputStream.close();
+				
+			} catch(IOException exception) {}
+			
+			this.open = false;
 		}
 		
-		this.clip.flush();
-		this.clip.close();
-		this.controls.clear();
-		
-		try {
-			
-			this.audioInputStream.close();
-			
-		} catch(IOException exception) {}
-		
-		this.open = false;
 		this.trigger(AudioEvent.Type.CLOSED);
 	}
 	
