@@ -14,14 +14,18 @@ Code written with it, is highly readable and maintainable.
 
 ### Version 2.0.1 (incompatible with older versions of this library)
 
+- Added the method `setTrack` to `Playlist`
+- Fixed an `IndexOutOfBoundsException` in the `next` and `previous` methods of the `Playlist` class
 - Made the project Maven compatible
 - Renamed `Utils` to `Util`
 - Added Unit-Tests
+- Updated the documentation
 - Moved everything static in the `Audio` interface to `AbstractAudio`
 - Fixed a bug that caused `BufferedAudio.isPlaying()` to return a wrong value
 - Fixed a bug that would re-open an instance of `StreamedAudio` if it was closed in the `REACHED_END` event
 - Added a close method in the `Playlist` class
 - Fixed most threading issues in `StreamedAudio`
+- Disabled dead code
 
 ### Version 2.0.0 (incompatible with older versions of this library)
 

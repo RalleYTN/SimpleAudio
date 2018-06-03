@@ -50,7 +50,7 @@ public class Recorder {
 	private long recordingStartTime;
 	
 	/**
-	 * Initializes the {@linkplain Recorder} with {@link FileFormat#WAV} and an audio format with
+	 * Initializes the {@linkplain Recorder} with {@link FileFormat#AU} and an audio format with
 	 * {@link AudioFormat.Encoding#PCM_SIGNED}, a sample rate of {@code 44100.0F}, a sample size
 	 * of {@code 16}, {@code 2} channels, a frame size of {@code 4}, a frame rate of {@code 44100}
 	 * and little endian.

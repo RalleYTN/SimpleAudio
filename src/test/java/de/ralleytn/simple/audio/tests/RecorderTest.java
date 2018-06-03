@@ -23,13 +23,44 @@
  */
 package de.ralleytn.simple.audio.tests;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.io.File;
+
 import org.junit.jupiter.api.Test;
+
+import de.ralleytn.simple.audio.BufferedAudio;
+import de.ralleytn.simple.audio.Recorder;
 
 class RecorderTest {
 
 	@Test
 	void testRecording() {
 		
-		// TODO
+		try {
+			
+			File output = new File("recorded.au");
+			Recorder recorder = new Recorder();
+			assertFalse(recorder.isRunning());
+			recorder.start(output);
+			assertTrue(recorder.isRunning());
+			Thread.sleep(5000);
+			assertTrue(recorder.getRecordingTime() >= 5000 && recorder.getRecordingTime() <= 5500);
+			recorder.stop();
+			assertFalse(recorder.isRunning());
+			
+			BufferedAudio audio = new BufferedAudio(output);
+			audio.open();
+			audio.close();
+			
+			output.delete();
+			
+		} catch(Exception exception) {
+			
+			exception.printStackTrace();
+			fail(exception.getMessage());
+		}
 	}
 }

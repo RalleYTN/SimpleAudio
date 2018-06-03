@@ -39,6 +39,7 @@ public class Playlist implements Playable {
 	private List<Audio> tracks = new ArrayList<>();
 	private List<PlaylistListener> listeners = new ArrayList<>();
 	private int currentTrack = -1;
+	private int prefferedNextTrack = -1;
 	private boolean shuffling;
 	private boolean looping;
 	private boolean muted;
@@ -333,7 +334,7 @@ public class Playlist implements Playable {
 	public void next() {
 		
 		this.stop();
-		Audio oldVal = this.tracks.get(this.currentTrack);
+		Audio oldVal = this.currentTrack != -1 ? this.tracks.get(this.currentTrack) : null;
 		this.currentTrack = this.getNextTrackIndex();
 		Audio newVal = this.tracks.get(this.currentTrack);
 		
@@ -346,13 +347,38 @@ public class Playlist implements Playable {
 	}
 	
 	/**
+	 * 
+	 * @param index the index of the new track.
+	 * @return the index of the old track
+	 * @since 1.1.0
+	 */
+	public int setTrack(int index) {
+		
+		this.pause();
+		int currentTrack = this.getCurrentTrackIndex();
+		this.stop();
+		Audio oldVal = this.currentTrack != -1 ? this.tracks.get(this.currentTrack) : null;
+		this.prefferedNextTrack = index;
+		this.currentTrack = this.getNextTrackIndex();
+		Audio newVal = this.tracks.get(this.currentTrack);
+
+		if(this.currentTrack != -1) {
+			
+			this.play();
+		}
+		
+		this.trigger(PlaylistEvent.Type.TRACK_CHANGED, oldVal, newVal);
+		return currentTrack;
+	}
+	
+	/**
 	 * Starts the previous track.
 	 * @since 1.1.0
 	 */
 	public void previous() {
 		
 		this.stop();
-		Audio oldVal = this.tracks.get(this.currentTrack);
+		Audio oldVal = this.currentTrack != -1 ? this.tracks.get(this.currentTrack) : null;
 		this.currentTrack = this.getPreviousTrackIndex();
 		Audio newVal = this.tracks.get(this.currentTrack);
 		
@@ -407,7 +433,12 @@ public class Playlist implements Playable {
 		
 		int nextTrack = -1;
 		
-		if(this.shuffling) {
+		if(this.prefferedNextTrack != -1) {
+			
+			nextTrack = this.prefferedNextTrack;
+			this.prefferedNextTrack = -1;
+		
+		} else if(this.shuffling) {
 			
 			nextTrack = (int)(Math.random() * (this.tracks.size() - 1));
 			

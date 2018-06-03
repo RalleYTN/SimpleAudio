@@ -60,6 +60,23 @@ class PlaylistTest {
 	}
 	
 	@Test
+	public void testSetTrack() {
+		
+		try {
+			
+			Playlist playlist = createPlaylist();
+			playlist.setTrack(2);
+			playlist.play();
+			assertEquals(2, playlist.getCurrentTrackIndex());
+			Thread.sleep(3000);
+			playlist.setTrack(0);
+			assertEquals(0, playlist.getCurrentTrackIndex());
+			Thread.sleep(3000);
+			
+		} catch(InterruptedException exception) {}
+	}
+	
+	@Test
 	public void testAddAndRemoveListeners() {
 		
 		PlaylistListener listener = event -> {};
